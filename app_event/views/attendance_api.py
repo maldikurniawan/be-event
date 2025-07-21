@@ -13,7 +13,7 @@ from be_event.permissions import PermissionMixin
 class EventAttendanceListApi(PermissionMixin, generics.ListCreateAPIView):
     permission_classes = (permissions.AllowAny,)
     parser_classes = (MultiPartParser, FormParser, JSONParser)
-    queryset = EventAttendance.objects.all()
+    queryset = EventAttendance.objects.all().order_by("-created_at")
     serializer_class = EventAttendanceSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
