@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 
 
@@ -17,10 +18,17 @@ class Event(models.Model):
             self.slug = slugify(self.nama)
         super().save(*args, **kwargs)
 
+    def is_finished(self):
+        return self.waktu_selesai and timezone.now() > self.waktu_selesai
+
 
 class EventAttendance(models.Model):
     event = models.ForeignKey(
-        Event, on_delete=models.CASCADE, related_name="attendances", null=True, blank=True
+        Event,
+        on_delete=models.CASCADE,
+        related_name="attendances",
+        null=True,
+        blank=True,
     )
     nama = models.CharField(max_length=255, null=True, blank=True)
     nohp = models.CharField(max_length=255, null=True, blank=True)

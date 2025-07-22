@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -33,7 +34,6 @@ class EventAttendanceListApi(PermissionMixin, generics.ListCreateAPIView):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        # Convert request.data to mutable to avoid QueryDict immutability error
         slug = self.kwargs.get("slug")
         try:
             event = Event.objects.get(slug=slug)
@@ -46,10 +46,31 @@ class EventAttendanceListApi(PermissionMixin, generics.ListCreateAPIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        now = timezone.now()
+
+        if event.waktu_mulai and now < event.waktu_mulai:
+            return Response(
+                {
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "message": "Pendaftaran belum dibuka. Event ini belum dimulai.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if event.waktu_selesai and now > event.waktu_selesai:
+            return Response(
+                {
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "message": "Pendaftaran ditutup. Event ini sudah selesai.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         data = request.data.copy()
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(event=event)
+
         response = {
             "status": status.HTTP_201_CREATED,
             "message": "Data Created Successfully!",

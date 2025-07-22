@@ -9,14 +9,14 @@ urlpatterns = [
     path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("event/", EventListApi.as_view(), name="event-list-create"),
-    path("event/<uuid:id>/", EventAPIView.as_view(), name="event-detail"),
+    path("event/<int:id>/", EventAPIView.as_view(), name="event-detail"),
     path(
         "event/<slug:slug>/attendance/",
         EventAttendanceListApi.as_view(),
         name="event-attendance-list-create",
     ),
     path(
-        "event/attendance/<uuid:id>/",
+        "event/attendance/<int:id>/",
         EventAttendanceAPIView.as_view(),
         name="event-attendance-detail",
     ),

@@ -22,6 +22,18 @@ class EventListApi(PermissionMixin, generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
+        nama = data.get("nama")
+
+        # Cek duplikat nama (dan otomatis mencegah slug duplikat juga)
+        if nama and Event.objects.filter(nama__iexact=nama.strip()).exists():
+            return Response(
+                {
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "message": f"Event dengan nama '{nama}' sudah ada.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
