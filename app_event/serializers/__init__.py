@@ -1,1 +1,2 @@
-from .eventattendance_serializer import *
+from .attendance_serializer import *
+from .event_serializer import *

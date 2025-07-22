@@ -4,64 +4,39 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from app_event.models import Event, EventAttendance
+from app_event.models import Event
 from app_event.paginations import CustomPagination
-from app_event.serializers import EventAttendanceSerializer
+from app_event.serializers import EventSerializer
 from be_event.permissions import PermissionMixin
 
 
-class EventAttendanceListApi(PermissionMixin, generics.ListCreateAPIView):
+class EventListApi(PermissionMixin, generics.ListCreateAPIView):
     permission_classes = (permissions.AllowAny,)
     parser_classes = (MultiPartParser, FormParser, JSONParser)
-    queryset = EventAttendance.objects.all().order_by("-created_at")
-    serializer_class = EventAttendanceSerializer
+    queryset = Event.objects.all().order_by("-created_at")
+    serializer_class = EventSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = [
-        "nama",
-    ]
+    search_fields = ["nama"]
     ordering_fields = "__all__"
 
-    def get_queryset(self):
-        """
-        Filter daftar hadir berdasarkan slug event (jika ada).
-        """
-        queryset = EventAttendance.objects.all().order_by("-created_at")
-        slug = self.kwargs.get("slug")
-        if slug:
-            queryset = queryset.filter(event__slug=slug)
-        return queryset
-
     def create(self, request, *args, **kwargs):
-        # Convert request.data to mutable to avoid QueryDict immutability error
-        slug = self.kwargs.get("slug")
-        try:
-            event = Event.objects.get(slug=slug)
-        except Event.DoesNotExist:
-            return Response(
-                {
-                    "status": status.HTTP_404_NOT_FOUND,
-                    "message": f"Event dengan slug '{slug}' tidak ditemukan.",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         data = request.data.copy()
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(event=event)
+        serializer.save()
         response = {
             "status": status.HTTP_201_CREATED,
-            "message": "Data Created Successfully!",
+            "message": "Event Created Successfully!",
             "data": serializer.data,
         }
         return Response(response, status=status.HTTP_201_CREATED)
 
 
-class EventAttendanceAPIView(PermissionMixin, generics.RetrieveUpdateDestroyAPIView):
+class EventAPIView(PermissionMixin, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.AllowAny,)
-    queryset = EventAttendance.objects.all()
-    serializer_class = EventAttendanceSerializer
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
     pagination_class = CustomPagination
     lookup_field = "id"
 
@@ -72,7 +47,7 @@ class EventAttendanceAPIView(PermissionMixin, generics.RetrieveUpdateDestroyAPIV
         self.perform_update(serializer)
         response = {
             "status": status.HTTP_200_OK,
-            "message": "Data Updated Successfully!",
+            "message": "Event Updated Successfully!",
             "data": serializer.data,
         }
         return Response(response, status=status.HTTP_200_OK)
@@ -82,6 +57,6 @@ class EventAttendanceAPIView(PermissionMixin, generics.RetrieveUpdateDestroyAPIV
         instance.delete()
         response = {
             "status": status.HTTP_200_OK,
-            "message": "Data Deleted Successfully!",
+            "message": "Event Deleted Successfully!",
         }
         return Response(response, status=status.HTTP_200_OK)
