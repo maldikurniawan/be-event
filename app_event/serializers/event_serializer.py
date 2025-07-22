@@ -2,14 +2,28 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from app_event.models import Event
+from .barcode_serializer import EventBarcodeSerializer
 
 
 class EventSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
+    barcode = EventBarcodeSerializer(read_only=True)
 
     class Meta:
         model = Event
-        fields = "__all__"
+        fields = [
+            "id",
+            "status",
+            "nama",
+            "slug",
+            "deskripsi",
+            "waktu_mulai",
+            "waktu_selesai",
+            "created_at",
+            "updated_at",
+            "deleted_at",
+            "barcode",
+        ]
 
     def get_status(self, obj):
         now = timezone.now()
