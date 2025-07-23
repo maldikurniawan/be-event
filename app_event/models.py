@@ -1,7 +1,6 @@
 from io import BytesIO
 
-import barcode
-from barcode.writer import ImageWriter
+import qrcode
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import models
@@ -73,15 +72,22 @@ class EventBarcode(models.Model):
         if not self.url:
             self.url = self.barcode_value
 
-        # Buat barcode (misalnya format Code128)
-        barcode_class = barcode.get_barcode_class("code128")
-        bar = barcode_class(self.barcode_value, writer=ImageWriter())
+        # Generate QR code image
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(self.barcode_value)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+
         buffer = BytesIO()
+        img.save(buffer, format="PNG")
 
-        writer_options = {"write_text": False}
-        bar.write(buffer, options=writer_options)
-
-        filename = f"{self.event.slug or self.event.id}_barcode.png"
+        filename = f"{self.event.slug or self.event.id}_qrcode.png"
         self.image.save(filename, ContentFile(buffer.getvalue()), save=False)
 
     def save(self, *args, **kwargs):
