@@ -9,6 +9,7 @@ from app_event.models import Event, EventAttendance
 from app_event.paginations import CustomPagination
 from app_event.serializers import EventAttendanceSerializer
 from be_event.permissions import PermissionMixin
+from utils.utils import verify_turnstile_token
 
 
 class EventAttendanceListApi(PermissionMixin, generics.ListCreateAPIView):
@@ -62,6 +63,21 @@ class EventAttendanceListApi(PermissionMixin, generics.ListCreateAPIView):
                 {
                     "status": status.HTTP_400_BAD_REQUEST,
                     "message": "Pendaftaran ditutup. Event ini sudah selesai.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Verifikasi token Turnstile
+        token = request.data.get(
+            "token"
+        )  # BUKAN request.POST, karena DRF pakai request.data
+        if not token or not verify_turnstile_token(
+            token, request.META.get("REMOTE_ADDR")
+        ):
+            return Response(
+                {
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "message": "Verifikasi Turnstile gagal.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
