@@ -18,4 +18,9 @@ urlpatterns = [
         EventAttendanceAPIView.as_view(),
         name="event-attendance-detail",
     ),
+    path(
+        "event/<slug:slug>/attendance/export-excel/",
+        EventAttendanceExportExcelApi.as_view(),
+        name="event-attendance-export-excel",
+    ),
 ]
