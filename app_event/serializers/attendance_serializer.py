@@ -26,3 +26,24 @@ class EventAttendanceSerializer(serializers.ModelSerializer):
         except DjangoValidationError:
             raise serializers.ValidationError("Email tidak valid.")
         return value
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        # Samarkan nomor HP
+        nohp = data.get("nohp", "")
+        if len(nohp) >= 6:
+            data["nohp"] = f"{nohp[:2]}{'*' * (len(nohp) - 4)}{nohp[-2:]}"
+        elif len(nohp) > 0:
+            data["nohp"] = f"{nohp[0]}{'*' * (len(nohp) - 1)}"
+
+        # Samarkan email
+        email = data.get("email", "")
+        if "@" in email:
+            name, domain = email.split("@", 1)
+            if len(name) > 1:
+                data["email"] = f"{name[0]}{'*' * (len(name) - 1)}@{domain}"
+            else:
+                data["email"] = f"{name}*@{domain}"
+
+        return data
