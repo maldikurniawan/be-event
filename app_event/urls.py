@@ -9,14 +9,19 @@ urlpatterns = [
     path("event/", EventListApi.as_view(), name="event-list-create"),
     path("event/<int:id>/", EventAPIView.as_view(), name="event-detail"),
     path(
-        "event/<slug:slug>/attendance/",
-        EventAttendanceListApi.as_view(),
-        name="event-attendance-list-create",
+        "event/attendance/all/",
+        EventAttendanceAllListApi.as_view(),
+        name="event-attendance-all",
     ),
     path(
         "event/attendance/<int:id>/",
         EventAttendanceAPIView.as_view(),
         name="event-attendance-detail",
+    ),
+    path(
+        "event/<slug:slug>/attendance/",
+        EventAttendanceListApi.as_view(),
+        name="event-attendance-list-create",
     ),
     path(
         "event/<slug:slug>/attendance/export-excel/",

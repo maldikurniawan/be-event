@@ -8,6 +8,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from app_event.models import Event, EventAttendance
 from app_event.paginations import CustomPagination
@@ -169,3 +170,19 @@ class EventAttendanceAPIView(PermissionMixin, generics.RetrieveUpdateDestroyAPIV
             "message": "Data Deleted Successfully!",
         }
         return Response(response, status=status.HTTP_200_OK)
+
+
+class EventAttendanceAllListApi(PermissionMixin, APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request, slug=None):
+        attendances = EventAttendance.objects.all().order_by("-created_at")
+
+        serializer = EventAttendanceSerializer(attendances, many=True)
+        return Response(
+            {
+                "count": attendances.count(),
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
