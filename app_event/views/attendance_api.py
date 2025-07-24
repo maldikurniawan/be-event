@@ -1,3 +1,7 @@
+from decouple import config
+from django.core.mail import send_mail
+from django.core.mail.backends.smtp import EmailBackend
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status
@@ -19,9 +23,7 @@ class EventAttendanceListApi(PermissionMixin, generics.ListCreateAPIView):
     serializer_class = EventAttendanceSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = [
-        "nama",
-    ]
+    search_fields = ["nama"]
     ordering_fields = "__all__"
 
     def get_queryset(self):
@@ -68,9 +70,7 @@ class EventAttendanceListApi(PermissionMixin, generics.ListCreateAPIView):
             )
 
         # Verifikasi token Turnstile
-        token = request.data.get(
-            "token"
-        )  # BUKAN request.POST, karena DRF pakai request.data
+        token = request.data.get("token")
         if not token or not verify_turnstile_token(
             token, request.META.get("REMOTE_ADDR")
         ):
@@ -86,6 +86,53 @@ class EventAttendanceListApi(PermissionMixin, generics.ListCreateAPIView):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(event=event)
+
+        # Ambil data email dan nama dari hasil serializer
+        nama = serializer.validated_data.get("nama")
+        email_to = serializer.validated_data.get("email")
+
+        # Siapkan isi email
+        subject = f"Konfirmasi Kehadiran Event: {event.nama}"
+        message = f"Halo {nama},\n\nTerima kasih telah mendaftar ke event {event.nama}."
+
+        html_message = render_to_string(
+            "emails/event_attendance_confirmation.html",
+            {
+                "nama": nama,
+                "event": event,
+            },
+        )
+
+        from_email = f"EventBoard <{config('EMAIL_HOST_USER')}>"
+
+        # Konfigurasi backend email manual
+        backend_email = EmailBackend(
+            host=config("EMAIL_HOST"),
+            port=config("EMAIL_PORT", cast=int),
+            username=config("EMAIL_HOST_USER"),
+            password=config("EMAIL_HOST_PASSWORD"),
+            use_tls=config("EMAIL_USE_TLS", cast=bool),
+            fail_silently=False,
+        )
+
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=[email_to],
+                html_message=html_message,
+                connection=backend_email,
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    "message": f"Gagal mengirim email: {str(e)}",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         response = {
             "status": status.HTTP_201_CREATED,
